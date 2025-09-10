@@ -1,4 +1,6 @@
 streamlit==1.49.1
+streamlit-webrtc
+av
 opencv-python-headless>=4.11.0,<5
 mediapipe==0.10.18
 numpy
