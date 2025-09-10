@@ -51,80 +51,52 @@ def stretch_exercise(landmarks, frame):
     return frame
 
 
-# Setup
-
-cap = cv2.VideoCapture(0)
+# === Utility untuk proses satu frame ===
 mp_hands = mp.solutions.hands
 mp_drawing = mp.solutions.drawing_utils
 
-hands = mp_hands.Hands(
-    max_num_hands=2,
-    min_detection_confidence=0.7,
-    min_tracking_confidence=0.5
-)
-
-exercise_mode = None  # Default: no exercise.
-
-# Main Loop
-
-
-while cap.isOpened():
-    ret, frame = cap.read()
-    if not ret:
-        print("ERROR: Cannot receive frame")
-        break
-
-    # Flip for selfie-view
+def process_frame(frame, exercise_mode=None):
+    """Proses frame OpenCV (BGR) dan return frame dengan annotation"""
+    # Flip untuk selfie-view
     frame = cv2.flip(frame, 1)
 
     # Convert BGR → RGB
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     # Detect hands
-    result = hands.process(rgb_frame)
+    with mp_hands.Hands(
+        max_num_hands=2,
+        min_detection_confidence=0.7,
+        min_tracking_confidence=0.5
+    ) as hands:
+        result = hands.process(rgb_frame)
 
-    if result.multi_hand_landmarks:
-        for hand_landmarks in result.multi_hand_landmarks:
-            landmarks = hand_landmarks.landmark  # define first
+        if result.multi_hand_landmarks:
+            for hand_landmarks in result.multi_hand_landmarks:
+                landmarks = hand_landmarks.landmark  
 
-            # Estimate palm width → distance from camera
-            index_mcp = landmarks[5]
-            pinky_mcp = landmarks[17]
-            width_mcp = ((index_mcp.x - pinky_mcp.x) ** 2 + (index_mcp.y - pinky_mcp.y) ** 2) ** 0.5
-            
-            # Target width_mcp ~ 0.10 (30.00 cm), allow tolerance +-0.03
-            width_target = 0.10
-            tolerance = 0.03
-            
-            # Display distance feedback
-            if width_mcp < width_target - tolerance:
-                cv2.putText(frame, 'Dekatkan tangan dengan kamera',
-                            (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-            elif width_mcp > width_target + tolerance:
-                cv2.putText(frame, 'Jauhkan tangan dari kamera',
-                            (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                # Estimate palm width
+                index_mcp = landmarks[5]
+                pinky_mcp = landmarks[17]
+                width_mcp = ((index_mcp.x - pinky_mcp.x) ** 2 + (index_mcp.y - pinky_mcp.y) ** 2) ** 0.5
+                
+                # Distance feedback
+                width_target = 0.10
+                tolerance = 0.03
+                if width_mcp < width_target - tolerance:
+                    cv2.putText(frame, 'Dekatkan tangan dengan kamera',
+                                (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                elif width_mcp > width_target + tolerance:
+                    cv2.putText(frame, 'Jauhkan tangan dari kamera',
+                                (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-            # Run selected exercise
-            if exercise_mode == "opposition":
-                frame = opposition_exercise(landmarks, frame)
-            elif exercise_mode == "stretch":
-                frame = stretch_exercise(landmarks, frame)
+                # Exercise mode
+                if exercise_mode == "opposition":
+                    frame = opposition_exercise(landmarks, frame)
+                elif exercise_mode == "stretch":
+                    frame = stretch_exercise(landmarks, frame)
 
-            # Draw landmarks
-            mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                # Draw landmarks
+                mp_drawing.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-    # Show frame
-    cv2.imshow('RIOTLite Motor Assessment Scale: Hand Movements', frame)
-
-    # Key controls
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('1'):
-        exercise_mode = "opposition"
-    elif key == ord('2'):
-        exercise_mode = "stretch"
-    elif key == ord('q'):
-        break
-
-# Release
-cap.release()
-cv2.destroyAllWindows()
+    return frame
