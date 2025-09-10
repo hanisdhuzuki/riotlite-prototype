@@ -1,5 +1,5 @@
 import streamlit as st
-#import cv2
+import cv2
 import mediapipe as mp
 from handtrack import opposition_exercise, stretch_exercise
 
@@ -74,4 +74,5 @@ while run:
 
 # ---------- Cleanup ----------
 cap.release()
+
 
