@@ -1,9 +1,0 @@
-streamlit==1.24.1
-streamlit-webrtc==0.63.4
-opencv-python-headless==4.12.0.88
-mediapipe==0.10.21
-numpy==1.26.0
-rich==14.1.0
-markdown-it-py==4.0.0
-pygments==2.19.2
-mdurl==0.1.2
